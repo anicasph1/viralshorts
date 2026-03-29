@@ -92,25 +92,22 @@ function safeParse(text: string) {
 }
 
 // ✅ SIMPLE VALIDATION (NOT OVERSTRICT)
-function validate(battle: any) {
+function validateBattle(battle: any) {
   const hero = battle.hero_food.toLowerCase();
   const villain = battle.villain_food.toLowerCase();
 
   for (const d of battle.dialogue) {
     const line = d.line.toLowerCase();
 
-    // ✅ dapat may kahit isang tamang food
-    if (!line.includes(hero) && !line.includes(villain)) {
-      throw new Error(`Unknown food: ${line}`);
+    if (d.speaker === "hero" && !line.includes(hero)) {
+      throw new Error(`Hero mismatch: ${line}`);
     }
 
-    // ✅ speaker consistency (soft check)
-    if (d.speaker === 'hero' && !line.includes(hero)) {
-      console.warn('Hero line weak match:', line);
-    }
-
-    if (d.speaker === 'villain' && !line.includes(villain)) {
-      console.warn('Villain line weak match:', line);
+    if (d.speaker === "villain") {
+      // allow related words (not strict exact match)
+      if (!line.includes(villain)) {
+        console.warn("⚠️ Villain line doesn't include exact name:", line);
+      }
     }
   }
 }
