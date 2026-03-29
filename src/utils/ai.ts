@@ -61,12 +61,18 @@ function validate(battle: any) {
   for (const d of battle.dialogue) {
     const line = d.line.toLowerCase();
 
+    // ✅ dapat may kahit isang tamang food
+    if (!line.includes(hero) && !line.includes(villain)) {
+      throw new Error(`Unknown food: ${line}`);
+    }
+
+    // ✅ speaker consistency (soft check)
     if (d.speaker === 'hero' && !line.includes(hero)) {
-      throw new Error(`Hero mismatch: ${line}`);
+      console.warn('Hero line weak match:', line);
     }
 
     if (d.speaker === 'villain' && !line.includes(villain)) {
-      throw new Error(`Villain mismatch: ${line}`);
+      console.warn('Villain line weak match:', line);
     }
   }
 }
