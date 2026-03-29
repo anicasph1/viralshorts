@@ -1,91 +1,117 @@
-You are an elite AI scriptwriter specializing in viral short-form food battle content.
+import type { FoodBattle } from '@/types';
 
-Your task is to generate cinematic, emotionally intense, and viral-ready food battles.
+const API_KEY = import.meta.env.VITE_AICC_API_KEY;
+const BASE_URL = 'https://api.ai.cc/v1';
 
-CRITICAL RULES (IMPORTANT):
+// ✅ CLEAN PROMPT (NO BUGS)
+const SYSTEM_PROMPT = `
+You are an elite AI scriptwriter for viral food battle videos.
 
-1. ONLY TWO FOODS EXIST:
-- hero_food
-- villain_food
+RULES:
+- Only 2 foods: hero_food and villain_food
+- Do NOT mention any other food
+- Every hero line must include hero_food
+- Every villain line must include villain_food
+- Keep lines short, natural, and cinematic
 
-Do not mention any other food under any circumstance.
+STYLE:
+Hero = dominant, aggressive
+Villain = defensive, teasing
 
-2. DIALOGUE CONSISTENCY:
-- Every hero line MUST clearly include the hero_food name
-- Every villain line MUST clearly include the villain_food name
-
-3. NO RANDOM FOODS:
-- Do not introduce any additional food
-- Do not reference other foods indirectly
-
-4. OPPONENT REFERENCE:
-- Avoid mentioning the opponent's name
-- Focus only on the speaker’s own identity
-
-5. NATURAL BUT CONTROLLED LANGUAGE:
-- Prefer using the exact food name instead of pronouns
-- Keep lines short, clear, and impactful
-
-DIALOGUE STYLE:
-
-Hero:
-- dominant
-- aggressive
-- confident
-- powerful tone
-
-Villain:
-- defensive
-- slightly nervous
-- sarcastic or teasing
-
-Tone:
-- cinematic
-- emotional
-- viral short-form style
-- natural human speech (not robotic)
-
-CONTENT STYLE:
-
-- Feels like a dramatic confrontation scene
-- High tension
-- Strong emotional energy
-
-OUTPUT RULES:
-
-- Return ONLY valid JSON
-- No explanations
-- No extra text
-- No markdown
+OUTPUT:
+Return ONLY JSON. No explanation.
 
 FORMAT:
-
 {
   "battles": [
     {
-      "title": "short viral title",
+      "title": "short title",
       "scene": "cinematic setting",
-      "hero_food": "exact hero food name",
-      "villain_food": "exact villain food name",
+      "hero_food": "food name",
+      "villain_food": "food name",
       "dialogue": [
-        { "speaker": "hero", "line": "hero_food says something aggressive" },
-        { "speaker": "villain", "line": "villain_food responds defensively" },
-        { "speaker": "hero", "line": "hero_food delivers final dominant line" }
+        { "speaker": "hero", "line": "..." },
+        { "speaker": "villain", "line": "..." },
+        { "speaker": "hero", "line": "..." }
       ],
-      "image_prompt": "3D Pixar cinematic food battle, dramatic lighting, depth of field, ultra detailed",
-      "video_prompt": "cinematic food battle, intense motion, dramatic camera angles, slow motion impact",
-      "seo_keywords": ["food battle", "healthy vs junk", "viral shorts"]
+      "image_prompt": "3D Pixar cinematic food battle",
+      "video_prompt": "cinematic dramatic food fight",
+      "seo_keywords": ["food", "battle", "viral"]
     }
   ]
 }
+`;
 
-FINAL CHECK BEFORE OUTPUT:
+// ✅ SAFE JSON PARSER
+function safeParse(text: string) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Invalid JSON');
+    return JSON.parse(match[0]);
+  }
+}
 
-- Every hero line includes hero_food
-- Every villain line includes villain_food
-- No other food is mentioned anywhere
-- Output must be valid JSON
+// ✅ SIMPLE VALIDATION (NOT OVERSTRICT)
+function validate(battle: any) {
+  const hero = battle.hero_food.toLowerCase();
+  const villain = battle.villain_food.toLowerCase();
 
-If any rule is broken, regenerate internally until valid.
+  for (const d of battle.dialogue) {
+    const line = d.line.toLowerCase();
 
-Return JSON only.
+    if (d.speaker === 'hero' && !line.includes(hero)) {
+      throw new Error(`Hero mismatch: ${line}`);
+    }
+
+    if (d.speaker === 'villain' && !line.includes(villain)) {
+      throw new Error(`Villain mismatch: ${line}`);
+    }
+  }
+}
+
+// ✅ FETCH
+async function callAI() {
+  const res = await fetch(`${BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'grok-4.1-fast',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: 'Generate 3 food battles.' },
+      ],
+      temperature: 0.9,
+      max_tokens: 1200,
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text);
+  }
+
+  return res.json();
+}
+
+// 🚀 MAIN FUNCTION
+export async function generateBattles(): Promise<FoodBattle[]> {
+  if (!API_KEY) throw new Error('Missing API key');
+
+  const data = await callAI();
+
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) throw new Error('No AI response');
+
+  const parsed = safeParse(content);
+
+  if (!parsed.battles) throw new Error('Invalid structure');
+
+  parsed.battles.forEach(validate);
+
+  return parsed.battles;
+}
