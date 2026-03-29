@@ -55,15 +55,22 @@ function safeParse(text: string) {
 // ✅ RELAXED VALIDATION
 function validateBattle(battle: any) {
   const hero = battle.hero_food.toLowerCase();
+  const villain = battle.villain_food.toLowerCase();
 
   for (const d of battle.dialogue) {
     const line = d.line.toLowerCase();
 
     if (d.speaker === "hero" && !line.includes(hero)) {
-      console.warn("⚠️ Hero name not found in line:", line);
+      throw new Error(`Hero mismatch: ${line}`);
+    }
+
+    if (d.speaker === "villain") {
+      // allow related words (not strict exact match)
+      if (!line.includes(villain)) {
+        console.warn("⚠️ Villain line doesn't include exact name:", line);
+      }
     }
   }
-}
 
 // ✅ API CALL
 async function callAI() {
