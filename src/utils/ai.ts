@@ -53,7 +53,7 @@ export async function generateBattles(): Promise<FoodBattle[]> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'grok-4.1-fast',
+     model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: 'Generate 3 viral food battle scripts with unique healthy vs junk food matchups. Make them epic and shareable!' }
