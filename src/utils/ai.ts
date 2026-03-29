@@ -71,7 +71,7 @@ function validateBattle(battle: any) {
       }
     }
   }
-
+}
 // ✅ API CALL
 async function callAI() {
   const res = await fetch(`${BASE_URL}/chat/completions`, {
