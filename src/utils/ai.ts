@@ -2,6 +2,7 @@ import type { FoodBattle } from '@/types';
 
 const API_KEY = import.meta.env.VITE_AICC_API_KEY;
 const BASE_URL = 'https://api.ai.cc/v1';
+
 const SYSTEM_PROMPT = `
 You are a top-tier viral content creator.
 
@@ -64,7 +65,7 @@ export async function generateBattles(): Promise<FoodBattle[]> {
       'Authorization': `Bearer ${API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'x-ai/grok-4.1-fast',
+      model: 'grok-4.1-fast',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: 'Generate 3 viral food battle scripts.' }
