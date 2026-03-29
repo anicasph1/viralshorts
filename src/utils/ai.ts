@@ -2,15 +2,37 @@ import type { FoodBattle } from '@/types';
 
 const API_KEY = import.meta.env.VITE_AICC_API_KEY;
 const BASE_URL = 'https://api.ai.cc/v1';
+
 const SYSTEM_PROMPT = `
-You are a world-class AI content generator with ChatGPT-level quality.
+You MUST return ONLY valid JSON.
 
-Generate 3 viral food battle scripts.
+Create 3 viral food battle scenarios.
 
-Return ONLY JSON:
+STRICT FORMAT:
 {
-  "battles": [...]
+  "battles": [
+    {
+      "title": "very catchy viral title",
+      "scene": "cinematic setting",
+      "hero_food": "healthy food",
+      "villain_food": "junk food",
+      "dialogue": [
+        { "speaker": "hero", "line": "20-35 words aggressive confident line" },
+        { "speaker": "villain", "line": "20-35 words funny defensive line" },
+        { "speaker": "hero", "line": "20-35 words final domination line" }
+      ],
+      "image_prompt": "cinematic 3D Pixar-style, dramatic lighting, ultra detailed",
+      "video_prompt": "cinematic action, dramatic movement, emotional energy",
+      "seo_keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]
+    }
+  ]
 }
+
+RULES:
+- Output JSON ONLY
+- No explanation
+- No extra text
+- Make it viral, emotional, cinematic
 `;
 
 export async function generateBattles(): Promise<FoodBattle[]> {
@@ -28,7 +50,7 @@ export async function generateBattles(): Promise<FoodBattle[]> {
       model: 'grok-4.1-fast',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: 'Generate 3 viral food battle scripts.' }
+        { role: 'user', content: 'Generate now.' }
       ],
       temperature: 0.9,
       max_tokens: 1500,
@@ -47,14 +69,28 @@ export async function generateBattles(): Promise<FoodBattle[]> {
     throw new Error('No content from AICC');
   }
 
-  // extract JSON
+  // Extract JSON safely
   const jsonMatch = content.match(/\{[\s\S]*\}/);
 
   if (!jsonMatch) {
     throw new Error('Invalid JSON response');
   }
 
-  const parsed = JSON.parse(jsonMatch[0]);
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonMatch[0]);
+  } catch {
+    throw new Error('Failed to parse JSON');
+  }
 
-  return parsed.battles;
+  // ✅ SAFE RETURN (fix sa map error mo)
+  if (Array.isArray(parsed.battles)) {
+    return parsed.battles;
+  }
+
+  if (Array.isArray(parsed)) {
+    return parsed;
+  }
+
+  return [parsed];
 }
