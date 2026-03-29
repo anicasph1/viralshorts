@@ -3,100 +3,119 @@ import type { FoodBattle } from '@/types';
 const API_KEY = import.meta.env.VITE_AICC_API_KEY;
 const BASE_URL = 'https://api.ai.cc/v1';
 
+// 🔥 STRONG PROMPT (ANTI-MALI)
 const SYSTEM_PROMPT = `
-You are a viral short-form content writer.
+You are an elite AI scriptwriter.
 
-Create 3 food battles that feel like REAL confrontations.
+CRITICAL RULES (MUST FOLLOW):
+- The HERO and VILLAIN foods must ALWAYS match the dialogue.
+- NEVER mention any food that is NOT the hero or villain.
+- If hero is "Kale", ALL hero lines must reference kale only.
+- If villain is "Candy Bar", ALL villain lines must reference candy bar only.
+- NO random foods (no chocolate, pizza, soda unless they are the actual characters).
 
-STYLE:
-- Raw
-- Emotional
-- Aggressive but natural
-- Sounds like real people arguing
+DIALOGUE STYLE:
+- Hero = aggressive, dominant, confident
+- Villain = slightly scared, defensive, but teasing
+- Natural human tone (NOT robotic)
+- Cinematic, emotional, viral
 
-CHARACTER BEHAVIOR:
-- HERO = dominant, confident, slightly intimidating
-- VILLAIN = slightly scared but hides it with humor, sarcasm, teasing, or cocky attitude
-
-DIALOGUE RULES:
-- EXACTLY 3 lines
-- 20–30 words each
-- Must feel like real speech (not poetic AI)
-- Use contractions (you're, I'm, don't)
-- Add attitude, tension, personality
-
-DYNAMIC:
-- Villain should sound like:
-  → joking but nervous
-  → teasing the hero
-  → acting tough but clearly pressured
-
-- Hero should:
-  → call out weakness
-  → sound in control
-  → deliver final domination line
-
-FORMAT:
-Return ONLY JSON:
+FORMAT STRICTLY:
 {
   "battles": [
     {
-      "title": "viral catchy title",
-      "scene": "cinematic setting",
-      "hero_food": "food name",
-      "villain_food": "food name",
+      "title": "...",
+      "scene": "...",
+      "hero_food": "...",
+      "villain_food": "...",
       "dialogue": [
         { "speaker": "hero", "line": "..." },
         { "speaker": "villain", "line": "..." },
         { "speaker": "hero", "line": "..." }
       ],
-      "image_prompt": "3D Pixar cinematic, ultra detailed, dramatic lighting",
-      "video_prompt": "cinematic action, slow motion, intense movement",
-      "seo_keywords": ["viral food battle", "healthy vs junk", "food war"]
+      "image_prompt": "...",
+      "video_prompt": "...",
+      "seo_keywords": ["...", "..."]
     }
   ]
 }
+
+FINAL RULE:
+If you mention a wrong food → output is INVALID.
 `;
 
+// 🔥 VALIDATION (ANTI-MISMATCH)
+function validateBattle(battle: any) {
+  const hero = battle.hero_food.toLowerCase();
+  const villain = battle.villain_food.toLowerCase();
+
+  for (const d of battle.dialogue) {
+    const line = d.line.toLowerCase();
+
+    if (d.speaker === "hero" && !line.includes(hero)) {
+      throw new Error(`Hero mismatch: ${line}`);
+    }
+
+    if (d.speaker === "villain" && !line.includes(villain)) {
+      throw new Error(`Villain mismatch: ${line}`);
+    }
+  }
+}
+
+// 🔁 AUTO RETRY (IMPORTANT)
+async function fetchWithRetry(body: any, retries = 2): Promise<any> {
+  try {
+    const res = await fetch(`${BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+
+    return await res.json();
+
+  } catch (err) {
+    if (retries > 0) {
+      return fetchWithRetry(body, retries - 1);
+    }
+    throw err;
+  }
+}
+
+// 🚀 MAIN FUNCTION
 export async function generateBattles(): Promise<FoodBattle[]> {
   if (!API_KEY) {
     throw new Error('Missing AICC API key');
   }
 
-  const response = await fetch(`${BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'grok-4.1-fast',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: 'Generate 3 viral food battle scripts.' }
-      ],
-      temperature: 0.9,
-      max_tokens: 1500,
-    }),
+  const data = await fetchWithRetry({
+    model: 'gpt-3.5-turbo', // ⚠️ SAFE fallback (pwede mo palitan later)
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: 'Generate 3 viral food battles.' }
+    ],
+    temperature: 0.9,
+    max_tokens: 1500,
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`AICC error: ${response.status} - ${errorText}`);
-  }
-
-  const data = await response.json();
   const content = data?.choices?.[0]?.message?.content;
 
   if (!content) {
-    throw new Error('No content from AICC');
+    throw new Error('No content from AI');
   }
 
-  // Extract JSON safely
+  // 🔍 Extract JSON safely
   const jsonMatch = content.match(/\{[\s\S]*\}/);
 
   if (!jsonMatch) {
-    throw new Error('Invalid JSON response');
+    throw new Error('Invalid JSON format');
   }
 
   const parsed = JSON.parse(jsonMatch[0]);
@@ -104,6 +123,9 @@ export async function generateBattles(): Promise<FoodBattle[]> {
   if (!parsed.battles || !Array.isArray(parsed.battles)) {
     throw new Error('Invalid battles format');
   }
+
+  // ✅ VALIDATE EACH BATTLE
+  parsed.battles.forEach(validateBattle);
 
   return parsed.battles;
 }
