@@ -3,7 +3,7 @@ import type { FoodBattle } from '@/types';
 const API_KEY = import.meta.env.VITE_AICC_API_KEY;
 const BASE_URL = 'https://api.ai.cc/v1';
 
-// 🔥 CLEAN PROMPT
+// 🔥 UPDATED PROMPT (FOCUS ON CINEMATIC FACE-OFF, NO FIGHTING)
 const SYSTEM_PROMPT = `
 You are a viral short-form content scriptwriter.
 
@@ -14,11 +14,41 @@ STRUCTURE:
 2. Villain responds (tempting, teasing)
 3. Hero finishes (final domination)
 
-RULES:
+DIALOGUE RULES:
 - Each line: 20–35 words
-- Must sound human, emotional, viral
+- Sounds like real human argument (NOT robotic)
+- Emotional, punchy, viral
+- No narration, only direct speaking
+
+CHARACTER RULES:
 - ONLY mention hero_food and villain_food
-- NO random foods
+- NEVER introduce other foods
+
+VISUAL STYLE (VERY IMPORTANT):
+
+IMAGE PROMPT:
+- 3D Pixar-style characters
+- Hero and villain facing each other (face-off)
+- NO fighting, NO physical attack
+- Strong confrontation energy (eye contact, tension)
+- Hero looks dominant and confident
+- Villain looks slightly defensive but still cocky
+- expressive faces
+- cinematic lighting (soft glow, rim light)
+- depth of field
+- highly detailed textures
+- environment matches scene (kitchen, grocery, mall, etc.)
+- camera angle: slightly low angle for hero (to feel powerful)
+
+VIDEO PROMPT:
+- cinematic face-off moment (NOT action fight)
+- slow camera push-in or orbit
+- intense eye contact between characters
+- subtle movement (breathing, slight gestures)
+- dramatic lighting shifts
+- emotional tension, not violence
+- close-up shots alternating hero and villain
+- feels like a heated argument scene before a fight (but no fight happens)
 
 OUTPUT JSON:
 {
@@ -65,13 +95,13 @@ function validateBattle(battle: any) {
     }
 
     if (d.speaker === "villain") {
-      // allow related words (not strict exact match)
       if (!line.includes(villain)) {
         console.warn("⚠️ Villain line doesn't include exact name:", line);
       }
     }
   }
 }
+
 // ✅ API CALL
 async function callAI() {
   const res = await fetch(`${BASE_URL}/chat/completions`, {
