@@ -19,7 +19,7 @@ DIALOGUE STYLE:
 - Villain = slightly scared, defensive, but teasing
 - Natural human tone (NOT robotic)
 - Cinematic, emotional, viral
-
+model: 'grok-4.1-fast'
 FORMAT STRICTLY:
 {
   "battles": [
