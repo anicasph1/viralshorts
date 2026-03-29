@@ -19,7 +19,29 @@ export default async function handler(req: any, res: any) {
       body: JSON.stringify(req.body),
     });
 
-    const data = await response.json();
+    const text = await response.text();
+
+    // 🔥 IMPORTANT DEBUG
+    console.log("RAW OPENAI RESPONSE:", text);
+
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return res.status(500).json({
+        error: "Invalid JSON from OpenAI",
+        raw: text
+      });
+    }
+
+    // 🔥 CHECK kung may choices
+    if (!data.choices || !data.choices[0]?.message?.content) {
+      return res.status(500).json({
+        error: "No content returned from OpenAI",
+        full_response: data
+      });
+    }
 
     return res.status(200).json(data);
 
