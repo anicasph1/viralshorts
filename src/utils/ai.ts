@@ -131,7 +131,7 @@ export async function generateBattles(): Promise<FoodBattle[]> {
   }
 
   const data = await fetchWithRetry({
-    model: 'gpt-4o-mini', // 🔥 upgraded model
+    model:'grok-4.1-fast', // 🔥 upgraded model
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: 'Generate 3 viral food battles.' },
