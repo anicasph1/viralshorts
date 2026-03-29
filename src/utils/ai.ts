@@ -1,38 +1,56 @@
 import type { FoodBattle } from '@/types';
 
 const API_KEY = import.meta.env.VITE_AICC_API_KEY;
-const BASE_URL = 'https://api.ai.cc/v1';
+const BASE_URL = 'https://api.aicc.ai/v1';
 
 const SYSTEM_PROMPT = `
-You MUST return ONLY valid JSON.
+You are a top-tier viral content creator.
 
-Create 3 viral food battle scenarios.
+Your style:
+- Aggressive
+- Emotional
+- Cinematic
+- Highly engaging
+- TikTok / YouTube Shorts optimized
 
-STRICT FORMAT:
+Create 3 food battles that feel like a MOVIE TRAILER.
+
+STRICT RULES:
+- Output ONLY JSON
+- No explanations
+- No extra text
+
+DIALOGUE STYLE:
+- Hero = dominant, savage, confident
+- Villain = defensive, funny, insecure
+- Every line must feel HUMAN (not robotic)
+- Each line: 20–30 words ONLY
+
+Make lines:
+- punchy
+- memorable
+- slightly exaggerated
+- emotionally charged
+
+FORMAT:
 {
   "battles": [
     {
-      "title": "very catchy viral title",
-      "scene": "cinematic setting",
+      "title": "EXTREMELY catchy, clickbait, viral title",
+      "scene": "cinematic, intense environment",
       "hero_food": "healthy food",
       "villain_food": "junk food",
       "dialogue": [
-        { "speaker": "hero", "line": "20-35 words aggressive confident line" },
-        { "speaker": "villain", "line": "20-35 words funny defensive line" },
-        { "speaker": "hero", "line": "20-35 words final domination line" }
+        { "speaker": "hero", "line": "..." },
+        { "speaker": "villain", "line": "..." },
+        { "speaker": "hero", "line": "..." }
       ],
-      "image_prompt": "cinematic 3D Pixar-style, dramatic lighting, ultra detailed",
-      "video_prompt": "cinematic action, dramatic movement, emotional energy",
-      "seo_keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]
+      "image_prompt": "3D Pixar cinematic, dramatic lighting, ultra detailed, depth of field",
+      "video_prompt": "cinematic action, slow motion, dramatic camera movement, epic energy",
+      "seo_keywords": ["viral food battle", "healthy vs junk", "food war", "nutrition", "viral shorts"]
     }
   ]
 }
-
-RULES:
-- Output JSON ONLY
-- No explanation
-- No extra text
-- Make it viral, emotional, cinematic
 `;
 
 export async function generateBattles(): Promise<FoodBattle[]> {
@@ -47,10 +65,10 @@ export async function generateBattles(): Promise<FoodBattle[]> {
       'Authorization': `Bearer ${API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'grok-4.1-fast',
+      model: 'x-ai/grok-4.1-fast',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: 'Generate now.' }
+        { role: 'user', content: 'Generate 3 viral food battle scripts.' }
       ],
       temperature: 0.9,
       max_tokens: 1500,
@@ -76,21 +94,11 @@ export async function generateBattles(): Promise<FoodBattle[]> {
     throw new Error('Invalid JSON response');
   }
 
-  let parsed;
-  try {
-    parsed = JSON.parse(jsonMatch[0]);
-  } catch {
-    throw new Error('Failed to parse JSON');
+  const parsed = JSON.parse(jsonMatch[0]);
+
+  if (!parsed.battles || !Array.isArray(parsed.battles)) {
+    throw new Error('Invalid battles format');
   }
 
-  // ✅ SAFE RETURN (fix sa map error mo)
-  if (Array.isArray(parsed.battles)) {
-    return parsed.battles;
-  }
-
-  if (Array.isArray(parsed)) {
-    return parsed;
-  }
-
-  return [parsed];
+  return parsed.battles;
 }
