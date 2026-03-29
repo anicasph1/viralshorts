@@ -1,8 +1,7 @@
 import type { FoodBattle } from '@/types';
 
 const API_KEY = import.meta.env.VITE_AICC_API_KEY;
-const BASE_URL = 'https://api.aicc.ai/v1';
-
+const BASE_URL = 'https://api.ai.cc/v1';
 const SYSTEM_PROMPT = `
 You are a world-class AI content generator with ChatGPT-level quality.
 
