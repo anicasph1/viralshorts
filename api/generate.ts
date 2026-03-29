@@ -1,5 +1,4 @@
 export default async function handler(req: any, res: any) {
-  // Allow only POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -20,16 +19,21 @@ export default async function handler(req: any, res: any) {
       body: JSON.stringify(req.body),
     });
 
-    const data = await response.json();
+    const text = await response.text();
+
+    // debug logging
+    console.log("RAW RESPONSE:", text);
+
+    const data = JSON.parse(text);
 
     return res.status(200).json(data);
 
-  } catch (error) {
-    console.error("API ERROR:", error);
+  } catch (error: any) {
+    console.error("FETCH ERROR:", error);
 
     return res.status(500).json({
       error: "Server error",
-      details: error instanceof Error ? error.message : "Unknown error"
+      details: error.message || "fetch failed"
     });
   }
 }
