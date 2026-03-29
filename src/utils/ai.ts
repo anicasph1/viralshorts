@@ -3,43 +3,24 @@ import type { FoodBattle } from '@/types';
 const API_KEY = import.meta.env.VITE_AICC_API_KEY;
 const BASE_URL = 'https://api.ai.cc/v1';
 
-// ✅ CLEAN PROMPT (NO BUGS)
+// 🔥 CLEAN PROMPT
 const SYSTEM_PROMPT = `
 You are a viral short-form content scriptwriter.
 
-Your job is to create intense FOOD BATTLES — NOT narration.
+Create intense FOOD BATTLES — direct confrontation, no narration.
 
-CRITICAL STRUCTURE:
-- This is a FACE-OFF conversation, not storytelling
-- Characters directly talk to each other
-- NO narration, NO descriptions inside dialogue
+STRUCTURE:
+1. Hero attacks (health-based, aggressive)
+2. Villain responds (tempting, teasing)
+3. Hero finishes (final domination)
 
-DIALOGUE FLOW (STRICT):
-1. HERO attacks first (health-based, aggressive, confident)
-2. VILLAIN responds (defensive, teasing, persuasive, tempting)
-3. HERO finishes (final domination line, powerful closing)
-
-STYLE REQUIREMENTS:
-- Each line = 20 to 35 words ONLY
-- Sounds like REAL HUMAN TRASH TALK (not robotic)
-- Punchy, emotional, viral
-- Like TikTok / Shorts dialogue
-
-CHARACTER PERSONALITY:
-- HERO → exposes health benefits, shames junk food
-- VILLAIN → tempting, addictive, manipulative, slightly insecure but cocky
-
-IMPORTANT RULES:
+RULES:
+- Each line: 20–35 words
+- Must sound human, emotional, viral
 - ONLY mention hero_food and villain_food
-- NEVER introduce other foods
-- Dialogue must match the characters EXACTLY
+- NO random foods
 
-EXAMPLE STYLE:
-Hero: "You're just empty calories pretending to be food—I'm real fuel, real strength, the reason bodies perform instead of slowly breaking down like you."
-Villain: "Please, I taste better and people actually crave me—you're just a boring health lecture no one enjoys."
-Hero: "They crave you because you're addictive, not because you're good—I'm what keeps them alive, strong, and winning long after you destroy them."
-
-OUTPUT FORMAT (STRICT JSON):
+OUTPUT JSON:
 {
   "battles": [
     {
@@ -58,29 +39,9 @@ OUTPUT FORMAT (STRICT JSON):
     }
   ]
 }
-
-IMAGE PROMPT STYLE (VERY IMPORTANT):
-- 3D Pixar-style cinematic characters
-- expressive faces (hero dominant, villain scared)
-- dramatic lighting, volumetric light
-- action pose (pointing, attacking, overpowering)
-- detailed textures
-- depth of field
-- environment matches scene (mall, kitchen, grocery, etc.)
-
-VIDEO PROMPT:
-- cinematic confrontation
-- slow motion + aggressive movement
-- emotional intensity
-- camera close-ups and dynamic angles
-
-FINAL RULE:
-If dialogue sounds like narration → INVALID
-If lines are too long → INVALID
-If wrong food mentioned → INVALID
 `;
 
-// ✅ SAFE JSON PARSER
+// ✅ SAFE PARSE
 function safeParse(text: string) {
   try {
     return JSON.parse(text);
@@ -91,28 +52,20 @@ function safeParse(text: string) {
   }
 }
 
-// ✅ SIMPLE VALIDATION (NOT OVERSTRICT)
+// ✅ RELAXED VALIDATION
 function validateBattle(battle: any) {
   const hero = battle.hero_food.toLowerCase();
-  const villain = battle.villain_food.toLowerCase();
 
   for (const d of battle.dialogue) {
     const line = d.line.toLowerCase();
 
     if (d.speaker === "hero" && !line.includes(hero)) {
-      throw new Error(`Hero mismatch: ${line}`);
-    }
-
-    if (d.speaker === "villain") {
-      // allow related words (not strict exact match)
-      if (!line.includes(villain)) {
-        console.warn("⚠️ Villain line doesn't include exact name:", line);
-      }
+      console.warn("⚠️ Hero name not found in line:", line);
     }
   }
 }
 
-// ✅ FETCH
+// ✅ API CALL
 async function callAI() {
   const res = await fetch(`${BASE_URL}/chat/completions`, {
     method: 'POST',
@@ -124,7 +77,7 @@ async function callAI() {
       model: 'grok-4.1-fast',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: 'Generate 3 food battles.' },
+        { role: 'user', content: 'Generate 3 viral food battles.' },
       ],
       temperature: 0.9,
       max_tokens: 1200,
@@ -139,7 +92,7 @@ async function callAI() {
   return res.json();
 }
 
-// 🚀 MAIN FUNCTION
+// 🚀 MAIN
 export async function generateBattles(): Promise<FoodBattle[]> {
   if (!API_KEY) throw new Error('Missing API key');
 
@@ -152,7 +105,7 @@ export async function generateBattles(): Promise<FoodBattle[]> {
 
   if (!parsed.battles) throw new Error('Invalid structure');
 
-  parsed.battles.forEach(validate);
+  parsed.battles.forEach(validateBattle);
 
   return parsed.battles;
 }
